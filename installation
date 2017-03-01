@@ -1,0 +1,47 @@
+
+********************************************************
+                YII2-WEBSERVICES USING MYSQL
+*******************************************************
+
+
+Composer installation
+==========================================================
+sudo curl -sS https://getcomposer.org/installer | php
+/usr/bin/php composer.phar 
+mv composer.phar /usr/local/bin/composer
+
+Redis installation
+=========================================================
+sudo apt-get update
+sudo apt-get install build-essential
+sudo apt-get install tcl8.5
+
+wget http://download.redis.io/releases/redis-2.8.9.tar.gz
+tar xzf redis-2.8.9.tar.gz
+cd redis-2.8.9
+sudo make
+sudo make test
+sudo make install
+cd utils
+sudo ./install_server.sh
+sudo service redis_6379 start
+sudo service redis_6379 stop
+redis-cli
+redis 127.0.0.1:6379> CONFIG get requirepass
+redis 127.0.0.1:6379> CONFIG set requirepass "password"
+redis 127.0.0.1:6379> AUTH password
+
+==============================================================
+composer global require "fxp/composer-asset-plugin:1.0.0"
+sudo composer install
+
+sudo mkdir resources
+sudo mkdir runtime
+sudo mkdir assets
+
+sudo chmod -R 0777 resources/
+sudo chmod -R 0777 runtime/
+sudo chmod -R 0777 assets/
+
+Edit the file config/_db.php with your database connection
+Edit the file config/_cache.php with with redis details
