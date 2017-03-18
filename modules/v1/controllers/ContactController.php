@@ -33,7 +33,7 @@ class ContactController extends AuthController {
             'friends'       =>  ['GET'],
             'visit'         =>  ['GET'],
             'profile'       =>  ['GET'],
-            'update-status' =>  ['GET'],
+            'update-status' =>  ['POST'],
             'save-files'    =>  ['POST'],
             'file-list'     =>  ['GET'],
             'update-profile'=>  ['POST']
@@ -173,6 +173,7 @@ class ContactController extends AuthController {
             'id' => FILTER_FLAG_NONE,
             'status-message' => FILTER_FLAG_NONE
         ];
+        
         $optional = [];
         $apiParams = filter_var_array($this->requestAttributes, $filterRules); //filter here
 
