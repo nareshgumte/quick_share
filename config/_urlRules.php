@@ -13,7 +13,8 @@ return [
                 'visit'     => 'visit',
                 'update-status' =>  'update-status',
                 'save-files'    =>  'save-files',
-                'file-list'     =>  'file-list'
+                'file-list'     =>  'file-list',
+                'update-profile' => 'update-profile'
             ]
         ],
         

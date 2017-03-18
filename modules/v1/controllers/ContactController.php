@@ -17,7 +17,7 @@ class ContactController extends AuthController {
      * @inheritdoc
      */
     public function init() {
-        $this->authFreeActions = ['add', 'sync-contacts', 'friends', 'visit', 'profile', 'update-status', 'save-files', 'file-list'];
+        $this->authFreeActions = ['add', 'sync-contacts', 'friends', 'visit', 'profile', 'update-status', 'save-files', 'file-list', 'update-profile'];
         parent::init();
     }
 
@@ -35,7 +35,8 @@ class ContactController extends AuthController {
             'profile'       =>  ['GET'],
             'update-status' =>  ['GET'],
             'save-files'    =>  ['POST'],
-            'file-list'     =>  ['GET']
+            'file-list'     =>  ['GET'],
+            'update-profile'=>  ['POST']
 
         ];
 
@@ -238,6 +239,32 @@ class ContactController extends AuthController {
         $responseDet = $regResponse->getResponse();
         $response['message'] =  $regResponse->getMessage();
         $response['data'] =  $regResponse->getResponse();
+        return $response;
+    }
+    public function actionUpdateProfile(){
+        Yii::info('update profile API', __METHOD__);
+        $filterRules = [
+            'id' => FILTER_FLAG_NONE,
+            'facebook_id' => FILTER_FLAG_NONE,
+            'name' => FILTER_FLAG_NONE,
+            'designation' => FILTER_FLAG_NONE,
+        ];
+        $optional = ['facebook_id', 'name', 'designation'];
+        $apiParams = filter_var_array($this->requestAttributes, $filterRules); //filter here
+
+        if ($this->validateRequestParams($apiParams, $optional)) {
+            Yii::info('Invalid Request ' . json_encode($this->getErrors()), __METHOD__);
+            throw new \yii\web\HttpException(400, 'Invalid attributes');
+        }
+
+        $contactService = new ContactService();
+        $regResponse = $contactService->updateProfile($apiParams);
+
+        if (!$regResponse->getStatus()) {
+            throw new \yii\web\HttpException($regResponse->getStatusCode(), $regResponse->getMessage());
+        }
+        $responseDet = $regResponse->getResponse();
+        $response['message'] =  $regResponse->getMessage();
         return $response;
     }
 }

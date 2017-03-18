@@ -17,6 +17,7 @@ class ContactService {
 
     const ACTIVE = 0;
     const INACTIVE = 1;
+    const STATUS_MESSAGE = '{"feeling" : "", "status" :  "", "location" : "", "looking" : ""}';
 
     public function saveContact($apiParams) {
 
@@ -35,7 +36,7 @@ class ContactService {
                     $contact->name = $apiParams['name'];
                     $contact->designation = $apiParams['designation'];
                     $contact->facebook_id = $apiParams['facebook_id'];
-                    $contact->status_mesage = "Contact Added";
+                    $contact->status_message = self::STATUS_MESSAGE;
                     $contact->status = 1;
                     $bl = $contact->save();
                     if ($bl == true) {
@@ -55,7 +56,7 @@ class ContactService {
                 $contact->name = $apiParams['name'];
                 $contact->designation = $apiParams['designation'];
                 $contact->facebook_id = $apiParams['facebook_id'];
-                $contact->status_mesage = "Contact Added";
+                $contact->status_message = self::STATUS_MESSAGE;
                 $contact->status = 1;
                 $bl = $contact->save();
 
@@ -113,7 +114,7 @@ class ContactService {
                     $contact->name = $friends[$i]['name'];
                     $contact->phone = $friends[$i]['phone'];
                     $contact->status = 0;
-                    $contact->status_mesage = 'Contact added';
+                    $contact->status_message = self::STATUS_MESSAGE;
                     $contact->save();
                 }
             }
@@ -127,8 +128,8 @@ class ContactService {
         $query = new Query;
         $query->select([
 		'friends.name AS name', 
-		'friends.phone as  phone',
-		'contacts.status', 'contacts.visits', 'contacts.designation'
+		'friends.phone AS phone',
+		'contacts.status', 'contacts.visits', 'contacts.designation', 'contacts.id', 'contacts.status_message'
             ]
 		)  
 	->from('friends')
@@ -187,7 +188,7 @@ class ContactService {
             $contactResponse->setMessage("Contact doesnot exists with this id");
             return $contactResponse;
         }
-        $contact->status_mesage = $apiParams['status-message'];
+        $contact->status_message = $apiParams['status-message'];
         $bl = $contact->save();
         if($bl == false){
             $contactResponse->setStatus(false);
@@ -245,5 +246,36 @@ class ContactService {
         }
         $contactResponse->setResponse($list);
         return $contactResponse;
+    }
+    public function updateProfile($apiParams){
+        $contactResponse = new ContactResponse();
+        $contact = $this->findById($apiParams['id']);
+        if($contact == null){
+            $contactResponse->setStatus(false);
+            $contactResponse->setStatusCode(408);
+            $contactResponse->setMessage("Contact doesnot exists with this id");
+            return $contactResponse;
+        }
+        if($apiParams['facebook_id'] != NULL || $apiParams['name'] != NULL || $apiParams['designation'] != NULL){
+            if($apiParams['facebook_id'] != NULL){
+                $contact->facebook_id = $apiParams['facebook_id'];
+            }
+            if($apiParams['name'] != NULL){
+                $contact->name = $apiParams['name'];
+            }
+            if($apiParams['designation'] != NULL){
+                $contact->designation = $apiParams['designation'];
+            }
+            $bl = $contact->save();
+            if($bl == false){
+                $contactResponse->setStatus(false);
+                $contactResponse->setStatusCode(409);
+                $contactResponse->setMessage("Profile updating failed");
+                return $contactResponse;
+            }
+        }
+        $contactResponse->setMessage('Profile updated successfully');
+        return $contactResponse;
+
     }
 }
