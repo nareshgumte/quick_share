@@ -13,6 +13,7 @@ use Yii;
  * @property string $facebook_id
  * @property string $designation
  * @property integer $visits
+ * @property string $profile_image
  * @property string $status_message
  * @property string $created_date
  * @property integer $status
@@ -47,6 +48,7 @@ class Contacts extends \yii\db\ActiveRecord
             [['phone'], 'string', 'max' => 20],
             [['name', 'designation'], 'string', 'max' => 255],
             [['facebook_id'], 'string', 'max' => 64],
+            [['profile_image'], 'string', 'max' => 128],
             [['phone'], 'unique'],
         ];
     }
@@ -63,6 +65,7 @@ class Contacts extends \yii\db\ActiveRecord
             'facebook_id' => 'Facebook ID',
             'designation' => 'Designation',
             'visits' => 'Visits',
+            'profile_image' => 'Profile Image',
             'status_message' => 'Status Message',
             'created_date' => 'Created Date',
             'status' => 'Status',

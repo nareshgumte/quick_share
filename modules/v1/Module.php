@@ -1,9 +1,7 @@
 <?php
 
 /**
- * @copyright (c) 2014, [x]cubelabs.
  * Unauthorized copying of this file, via any medium is strictly prohibited
- * @author [x]cube LABS Web service Team.
  */
 
 namespace app\modules\v1;

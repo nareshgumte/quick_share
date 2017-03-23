@@ -65,15 +65,16 @@ INSERT INTO `contacts` (`id`, `phone`, `name`, `facebook_id`, `designation`, `vi
 -- Table structure for table `files_list`
 --
 
-CREATE TABLE IF NOT EXISTS `files_list` (
+CREATE TABLE `files_list` (
   `contact_id` bigint(20) NOT NULL,
   `file_name` varchar(255) NOT NULL DEFAULT '',
+  `type` enum('app','doc','music','photo','video') NOT NULL,
   `length` int(11) NOT NULL,
   `created_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY `contact_id` (`contact_id`,`file_name`),
-  UNIQUE KEY `contact_id_2` (`contact_id`,`file_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
+  UNIQUE KEY `contact_id_2` (`contact_id`,`file_name`),
+  CONSTRAINT `files_list_ibfk_1` FOREIGN KEY (`contact_id`) REFERENCES `contacts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
 -- --------------------------------------------------------
 
 --
@@ -146,3 +147,4 @@ ALTER TABLE `visitors`
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
+ALTER TABLE  `contacts` ADD  `profile_image` VARCHAR( 128 ) NOT NULL DEFAULT  '' AFTER  `visits` ;

@@ -11,7 +11,7 @@ use app\models\Friends;
 use app\models\Visitors;
 use yii\db\Query;
 use app\models\FilesList;
-
+use yii\web\UploadedFile;
 
 class ContactService {
 
@@ -38,6 +38,7 @@ class ContactService {
                     $contact->facebook_id = $apiParams['facebook_id'];
                     $contact->status_message = self::STATUS_MESSAGE;
                     $contact->status = 1;
+                    
                     $bl = $contact->save();
                     if ($bl == true) {
                         $response['id'] = $contact['id'];
@@ -200,7 +201,7 @@ class ContactService {
         return $contactResponse;
     }
     public function saveFiles($apiParams){
-        $contactResonse = new ContactResponse();
+        $contactResponse = new ContactResponse();
         $contact = $this->findById($apiParams['id']);
         if($contact == null){
             $contactResponse->setStatus(false);
@@ -211,14 +212,22 @@ class ContactService {
         $files = json_decode($apiParams['files'], true);
         for($i = 0, $cnt = count($files); $i < $cnt;$i++){
             try{
+                
                 $file = FilesList::findOne(['contact_id' => $apiParams['id'], 'file_name' => $files[$i]['file_name']]);
+                
                 if($file == null){
                     $file = new FilesList();
                 }
+                
                 $file->contact_id = $apiParams['id'];
-                $file->file_name = $files[$i]['file'];
-                $file->length = $file[$i]['length'];
-                $file->save();
+                
+                $file->file_name = $files[$i]['file_name'];
+                
+                $file->length = $files[$i]['length'];
+                
+                $file->type = $files[$i]['type'];
+                
+                $bl = $file->save();
             }catch(Exception $e){
                 $contactResponse->setStatus(false);
                 $contactResponse->setStatusCode(409);
@@ -226,25 +235,35 @@ class ContactService {
                 return $contactResponse;
             }
         }
+        $contactResponse->setMessage('Files saved successfully');
         return $contactResponse;
     }
-    public function getFiles($id){
+    public function getFiles($contactId){
         $contactResponse = new ContactResponse();
-        $contact = $this->findById($id);
+        $contact = $this->findById($contactId);
         if($contact == null){
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Contact doesnot exists with this id");
             return $contactResponse;
         }
-        $list = FilesList::find(['contact_id' => $id])->asArray()->all();
+        $list = FilesList::find(['contact_id' => $contactId])->select(['type', 'group_concat(concat(file_name,":", length,":", created_date)) AS files'])->groupBy(['type'])->asArray()->all();
         if($list == null){
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(409);
             $contactResponse->setMessage("No Files share");
             return $contactResponse;
         }
-        $contactResponse->setResponse($list);
+        $files = [];
+        for($i = 0, $cnt = count($list); $i < $cnt; $i++){
+            $files[$list[$i]['type']] = array();
+            $data = explode(',', $list[$i]['files']);
+            for($j = 0, $fcnt = count($data); $j < $fcnt; $j++){
+                $file = explode(':',$data[$j]);
+                array_push($files[$list[$i]['type']], array("file_name" => $file[0], "length" => $file[1], "created_date" => $file[2]));
+            }
+        }
+        $contactResponse->setResponse($files);
         return $contactResponse;
     }
     public function updateProfile($apiParams){

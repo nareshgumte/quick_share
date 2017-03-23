@@ -9,6 +9,7 @@ use Yii;
  *
  * @property integer $contact_id
  * @property string $file_name
+ * @property string $type
  * @property integer $length
  * @property string $created_date
  *
@@ -30,8 +31,9 @@ class FilesList extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['contact_id', 'file_name', 'length'], 'required'],
+            [['contact_id', 'file_name', 'type', 'length'], 'required'],
             [['contact_id', 'length'], 'integer'],
+            [['type'], 'string'],
             [['created_date'], 'safe'],
             [['file_name'], 'string', 'max' => 255],
             [['contact_id', 'file_name'], 'unique', 'targetAttribute' => ['contact_id', 'file_name'], 'message' => 'The combination of Contact ID and File Name has already been taken.'],
@@ -48,6 +50,7 @@ class FilesList extends \yii\db\ActiveRecord
         return [
             'contact_id' => 'Contact ID',
             'file_name' => 'File Name',
+            'type' => 'Type',
             'length' => 'Length',
             'created_date' => 'Created Date',
         ];

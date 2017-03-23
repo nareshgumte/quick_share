@@ -193,6 +193,7 @@ class ContactController extends AuthController {
         return $response;
     }
     public function actionSaveFiles(){
+        
         Yii::info('visit contacts API', __METHOD__);
 
         $filterRules = [
@@ -221,7 +222,7 @@ class ContactController extends AuthController {
         Yii::info('visit contacts API', __METHOD__);
 
         $filterRules = [
-            'id' => FILTER_FLAG_NONE,
+            'contact_id' => FILTER_FLAG_NONE,
         ];
         $optional = [];
         $apiParams = filter_var_array($this->requestAttributes, $filterRules); //filter here
@@ -232,7 +233,7 @@ class ContactController extends AuthController {
         }
 
         $contactService = new ContactService();
-        $regResponse = $contactService->getFiles($apiParams['id']);
+        $regResponse = $contactService->getFiles($apiParams['contact_id']);
 
         if (!$regResponse->getStatus()) {
             throw new \yii\web\HttpException($regResponse->getStatusCode(), $regResponse->getMessage());
