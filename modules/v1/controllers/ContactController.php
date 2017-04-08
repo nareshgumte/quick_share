@@ -58,7 +58,6 @@ class ContactController extends AuthController {
             Yii::info('Invalid Request ' . json_encode($this->getErrors()), __METHOD__);
             throw new \yii\web\HttpException(400, 'Invalid attributes');
         }
-//echo "hello";exit;
         $contactService = new ContactService();
         $regResponse = $contactService->saveContact($apiParams);
 
@@ -193,16 +192,15 @@ class ContactController extends AuthController {
         return $response;
     }
     public function actionSaveFiles(){
-        
         Yii::info('visit contacts API', __METHOD__);
 
         $filterRules = [
             'id' => FILTER_FLAG_NONE,
-            'files' => FILTER_FLAG_NONE
+            'files' => FILTER_FLAG_NONE,
+            'remove_files' => FILTER_FLAG_NONE
         ];
-        $optional = [];
+        $optional = ['files', 'remove_files'];
         $apiParams = filter_var_array($this->requestAttributes, $filterRules); //filter here
-
         if ($this->validateRequestParams($apiParams, $optional)) {
             Yii::info('Invalid Request ' . json_encode($this->getErrors()), __METHOD__);
             throw new \yii\web\HttpException(400, 'Invalid attributes');

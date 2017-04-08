@@ -12,6 +12,7 @@ use app\models\Visitors;
 use yii\db\Query;
 use app\models\FilesList;
 use yii\web\UploadedFile;
+use yii\helpers\Url;
 
 class ContactService {
 
@@ -20,7 +21,6 @@ class ContactService {
     const STATUS_MESSAGE = '{"feeling" : "", "status" :  "", "location" : "", "looking" : ""}';
 
     public function saveContact($apiParams) {
-
         $response = [];
         $contactResponse = new ContactResponse();
         try {
@@ -32,13 +32,17 @@ class ContactService {
                     $contactResponse->setStatusCode(409);
                     $contactResponse->setMessage("Contact already exists");
                 } else {
+                    $this->removeProfileImage($contact->profile_image);
                     $contact->phone = $apiParams['phone'];
                     $contact->name = $apiParams['name'];
                     $contact->designation = $apiParams['designation'];
                     $contact->facebook_id = $apiParams['facebook_id'];
                     $contact->status_message = self::STATUS_MESSAGE;
                     $contact->status = 1;
-                    
+                    $fileName = $this->saveProfileImage();
+                    if ($fileName !== false) {
+                        $contact->profile_image = $fileName;
+                    }
                     $bl = $contact->save();
                     if ($bl == true) {
                         $response['id'] = $contact['id'];
@@ -59,6 +63,10 @@ class ContactService {
                 $contact->facebook_id = $apiParams['facebook_id'];
                 $contact->status_message = self::STATUS_MESSAGE;
                 $contact->status = 1;
+                $fileName = $this->saveProfileImage();
+                if ($fileName !== false) {
+                    $contact->profile_image = $fileName;
+                }
                 $bl = $contact->save();
 
                 if ($bl == true) {
@@ -81,6 +89,30 @@ class ContactService {
         return $contactResponse;
     }
 
+    private function saveProfileImage() {
+        $fileTypes = ["image/jpeg", "image/png", "image/gif"];
+        if (array_key_exists('profileImage', $_FILES) && ($_FILES['profileImage']['error'] == 0) && in_array($_FILES['profileImage']['type'], $fileTypes) && ($_FILES['profileImage']['size'] <= 1048576)) {
+            
+            $fName = explode(".", $_FILES['profileImage']['name']);
+            $ext = $fName[count($fName) - 1];
+            
+            $fileName = Uid::generateUUID() . "." . $ext;
+            if (move_uploaded_file($_FILES['profileImage']['tmp_name'], Yii::$app->params['docRoot']. 'resources/contacts/' . $fileName)) {
+                return Url::to('@web/resources/contacts/'.$fileName, true);
+            }
+            return false;
+        }
+        return false;
+    }
+    private function removeProfileImage($profileImage){
+        if(empty($profileImage)){
+            return;
+        }
+        $fileName = Yii::$app->params['docRoot']. 'resources/contacts/'.pathinfo($profileImage)['basename'];
+        if(file_exists($fileName)){
+            unlink($fileName);
+        }
+    }
     private function getDetilsByContact($phone) {
         return Contacts::findOne(['phone' => $phone]);
     }
@@ -101,7 +133,7 @@ class ContactService {
             $friends = json_decode($apiParams['contacts'], true);
             for ($i = 0, $cnt = count($friends); $i < $cnt; $i++) {
                 $friend = Friends::findOne(['contact_id' => $apiParams['id'], 'phone' => $friends[$i]['phone']]);
-                if($friend == null){
+                if ($friend == null) {
                     $friend = new Friends();
                 }
                 $friend->contact_id = $apiParams['id'];
@@ -124,54 +156,57 @@ class ContactService {
 
         return $contactResponse;
     }
-    public function getFriends($id){
+
+    public function getFriends($id) {
         $contactResponse = new ContactResponse();
         $query = new Query;
         $query->select([
-		'friends.name AS name', 
-		'friends.phone AS phone',
-		'contacts.status', 'contacts.visits', 'contacts.designation', 'contacts.id', 'contacts.status_message'
-            ]
-		)  
-	->from('friends')
-	->join('INNER JOIN', 'contacts','contacts.phone = friends.phone')
-        ->where('friends.contact_id = ' . $id);
+                    'friends.name AS name',
+                    'friends.phone AS phone',
+                    'contacts.status', 'contacts.profile_image', 'contacts.visits', 'contacts.designation', 'contacts.id', 'contacts.status_message'
+                        ]
+                )
+                ->from('friends')
+                ->join('INNER JOIN', 'contacts', 'contacts.phone = friends.phone')
+                ->where('friends.contact_id = ' . $id);
         $command = $query->createCommand();
         $data = $command->queryAll();
         $contactResponse->setResponse(array('friends' => $data));
         return $contactResponse;
     }
-    public function visitContact($apiParams){
+
+    public function visitContact($apiParams) {
         $contactResponse = new ContactResponse();
         $contact = $this->findById($apiParams['friend_id']);
-        if($contact == null){
+        if ($contact == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Visitor id doesnot exists");
             return $contactResponse;
         }
         $visitor = $this->findById($apiParams['id']);
-        if($visitor == null){
+        if ($visitor == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Contact doesnot exists");
             return $contactResponse;
         }
-        
+
         $visitor = new Visitors();
         $visitor->contact_id = $apiParams['friend_id'];
         $visitor->visitor_contact_id = $apiParams['id'];
         $bl = $visitor->save();
-        
-        $contact->visits +=  1;
+
+        $contact->visits += 1;
         $bl = $contact->save();
         return $contactResponse;
     }
-    public function getProfile($id){
+
+    public function getProfile($id) {
         $contactResponse = new ContactResponse();
         $contact = $this->findById($id);
-        
-        if($contact == null){
+
+        if ($contact == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Contact doesnot exists with this id");
@@ -180,10 +215,11 @@ class ContactService {
         $contactResponse->setResponse($contact);
         return $contactResponse;
     }
-    public function updateStatus($apiParams){
+
+    public function updateStatus($apiParams) {
         $contactResponse = new ContactResponse();
         $contact = $this->findById($apiParams['id']);
-        if($contact == null){
+        if ($contact == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Contact doesnot exists with this id");
@@ -191,7 +227,7 @@ class ContactService {
         }
         $contact->status_message = $apiParams['status-message'];
         $bl = $contact->save();
-        if($bl == false){
+        if ($bl == false) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(409);
             $contactResponse->setMessage("Status message saving failed");
@@ -200,93 +236,105 @@ class ContactService {
         $contactResponse->setMessage('Status message updated successfully');
         return $contactResponse;
     }
-    public function saveFiles($apiParams){
+
+    public function saveFiles($apiParams) {
         $contactResponse = new ContactResponse();
         $contact = $this->findById($apiParams['id']);
-        if($contact == null){
+        if ($contact == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Contact doesnot exists with this id");
             return $contactResponse;
         }
-        $files = json_decode($apiParams['files'], true);
-        for($i = 0, $cnt = count($files); $i < $cnt;$i++){
-            try{
-                
-                $file = FilesList::findOne(['contact_id' => $apiParams['id'], 'file_name' => $files[$i]['file_name']]);
-                
-                if($file == null){
-                    $file = new FilesList();
+        if ($apiParams['remove_files'] != null) {
+            $removeFiles = explode(",", $apiParams['remove_files']);
+            FilesList::deleteAll(['file_name' => $removeFiles]);
+        }
+        if ($apiParams['files'] != null) {
+            $files = json_decode($apiParams['files'], true);
+            for ($i = 0, $cnt = count($files); $i < $cnt; $i++) {
+                try {
+                    $file = FilesList::findOne(['contact_id' => $apiParams['id'], 'file_name' => $files[$i]['file_name']]);
+                    if ($file == null) {
+                        $file = new FilesList();
+                    }
+                    $file->contact_id = $apiParams['id'];
+
+                    $file->file_name = $files[$i]['file_name'];
+
+                    $file->length = $files[$i]['length'];
+
+                    $file->type = $files[$i]['type'];
+
+                    $bl = $file->save();
+                } catch (Exception $e) {
+                    $contactResponse->setStatus(false);
+                    $contactResponse->setStatusCode(409);
+                    $contactResponse->setMessage("Files list saving failed");
+                    return $contactResponse;
                 }
-                
-                $file->contact_id = $apiParams['id'];
-                
-                $file->file_name = $files[$i]['file_name'];
-                
-                $file->length = $files[$i]['length'];
-                
-                $file->type = $files[$i]['type'];
-                
-                $bl = $file->save();
-            }catch(Exception $e){
-                $contactResponse->setStatus(false);
-                $contactResponse->setStatusCode(409);
-                $contactResponse->setMessage("Files list saving failed");
-                return $contactResponse;
             }
         }
         $contactResponse->setMessage('Files saved successfully');
         return $contactResponse;
     }
-    public function getFiles($contactId){
+
+    public function getFiles($contactId) {
         $contactResponse = new ContactResponse();
         $contact = $this->findById($contactId);
-        if($contact == null){
+        if ($contact == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Contact doesnot exists with this id");
             return $contactResponse;
         }
-        $list = FilesList::find(['contact_id' => $contactId])->select(['type', 'group_concat(concat(file_name,":", length,":", created_date)) AS files'])->groupBy(['type'])->asArray()->all();
-        if($list == null){
+        $list = FilesList::find()->select(['type', 'group_concat(concat(file_name,"#", length,"#", created_date)) AS files'])->where(['contact_id' => $contactId])->groupBy(['type'])->asArray()->all();
+        if ($list == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(409);
             $contactResponse->setMessage("No Files share");
             return $contactResponse;
         }
         $files = [];
-        for($i = 0, $cnt = count($list); $i < $cnt; $i++){
+        for ($i = 0, $cnt = count($list); $i < $cnt; $i++) {
             $files[$list[$i]['type']] = array();
             $data = explode(',', $list[$i]['files']);
-            for($j = 0, $fcnt = count($data); $j < $fcnt; $j++){
-                $file = explode(':',$data[$j]);
-                array_push($files[$list[$i]['type']], array("file_name" => $file[0], "length" => $file[1], "created_date" => $file[2]));
+            for ($j = 0, $fcnt = count($data); $j < $fcnt; $j++) {
+                $file = explode('#', $data[$j]);
+                array_push($files[$list[$i]['type']], array("file_name" => @$file[0], "length" => @$file[1], "created_date" => @$file[2]));
             }
         }
         $contactResponse->setResponse($files);
         return $contactResponse;
     }
-    public function updateProfile($apiParams){
+
+    public function updateProfile($apiParams) {
         $contactResponse = new ContactResponse();
         $contact = $this->findById($apiParams['id']);
-        if($contact == null){
+        if ($contact == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(408);
             $contactResponse->setMessage("Contact doesnot exists with this id");
             return $contactResponse;
         }
-        if($apiParams['facebook_id'] != NULL || $apiParams['name'] != NULL || $apiParams['designation'] != NULL){
-            if($apiParams['facebook_id'] != NULL){
+        if ($apiParams['facebook_id'] != NULL || $apiParams['name'] != NULL || $apiParams['designation'] != NULL) {
+            $this->removeProfileImage($contact->profile_image);
+            if ($apiParams['facebook_id'] != NULL) {
                 $contact->facebook_id = $apiParams['facebook_id'];
             }
-            if($apiParams['name'] != NULL){
+            if ($apiParams['name'] != NULL) {
                 $contact->name = $apiParams['name'];
             }
-            if($apiParams['designation'] != NULL){
+            if ($apiParams['designation'] != NULL) {
                 $contact->designation = $apiParams['designation'];
             }
+            $fileName = $this->saveProfileImage();
+            if ($fileName !== false) {
+                $contact->profile_image = $fileName;
+            }
+            
             $bl = $contact->save();
-            if($bl == false){
+            if ($bl == false) {
                 $contactResponse->setStatus(false);
                 $contactResponse->setStatusCode(409);
                 $contactResponse->setMessage("Profile updating failed");
@@ -295,6 +343,6 @@ class ContactService {
         }
         $contactResponse->setMessage('Profile updated successfully');
         return $contactResponse;
-
     }
+
 }

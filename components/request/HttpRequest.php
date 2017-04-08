@@ -51,11 +51,13 @@ final class HttpRequest extends BaseRequest
                 break;
             case 'POST':
                 $params = $this->request->post();
+                
                 Yii::info("POST Request ::" . json_encode($params), 'requestResponse', __METHOD__);
                 if (count(array_keys($params)) > 0) {
                     if (count(array_intersect($apiRequestKeys, array_keys($params))) == 1) {
+                        
                         Yii::info("Attributes$$ Request ::" . @$params['attributes'], 'requestResponse', __METHOD__);
-                        $attributes = json_decode(@$params['attributes'], true);
+                        $attributes = json_decode(urldecode(@$params['attributes']), true);
                         Yii::info("Attributes$$ JSON ::" . serialize($attributes), 'requestResponse', __METHOD__);
                         $this->requestData = @$params['data'];
                         if (count($attributes) > 0) {

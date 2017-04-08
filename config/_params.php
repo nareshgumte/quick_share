@@ -11,4 +11,5 @@ return [
     'passwordResetTokenExpire' => 86400,
     'passwordHistory' => 3,
     'apiRequestKeys' => ['attributes'],
+    'docRoot' => __DIR__."/../"
 ];
