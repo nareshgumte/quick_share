@@ -68,6 +68,7 @@ INSERT INTO `contacts` (`id`, `phone`, `name`, `facebook_id`, `designation`, `vi
 CREATE TABLE `files_list` (
   `contact_id` bigint(20) NOT NULL,
   `file_name` varchar(255) NOT NULL DEFAULT '',
+  `file_path` varchar(255) NOT NULL DEFAULT '',
   `type` enum('app','doc','music','photo','video') NOT NULL,
   `length` int(11) NOT NULL,
   `created_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -91,17 +92,6 @@ CREATE TABLE IF NOT EXISTS `friends` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `friends`
---
-
-INSERT INTO `friends` (`contact_id`, `phone`, `name`, `created_date`) VALUES
-(1, '1123456789', 'test1', '2017-01-28 04:49:31'),
-(1, '123456789', 'test', '2017-01-28 04:49:31'),
-(1, '2123456789', 'TEST2', '2017-01-28 04:49:31');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `visitors`
 --
 
@@ -113,12 +103,6 @@ CREATE TABLE IF NOT EXISTS `visitors` (
   KEY `visitor_contact_id` (`visitor_contact_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Dumping data for table `visitors`
---
-
-INSERT INTO `visitors` (`contact_id`, `visitor_contact_id`, `visited_date`) VALUES
-(1, 2, '2017-01-29 06:12:19');
 
 --
 -- Constraints for dumped tables

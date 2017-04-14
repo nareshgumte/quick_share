@@ -248,19 +248,21 @@ class ContactService {
         }
         if ($apiParams['remove_files'] != null) {
             $removeFiles = explode(",", $apiParams['remove_files']);
-            FilesList::deleteAll(['file_name' => $removeFiles]);
+            FilesList::deleteAll(['file_path' => $removeFiles]);
         }
         if ($apiParams['files'] != null) {
             $files = json_decode($apiParams['files'], true);
             for ($i = 0, $cnt = count($files); $i < $cnt; $i++) {
                 try {
-                    $file = FilesList::findOne(['contact_id' => $apiParams['id'], 'file_name' => $files[$i]['file_name']]);
+                    $file = FilesList::findOne(['contact_id' => $apiParams['id'], 'file_name' => $files[$i]['file_name'], 'file_path' => $files[$i]['file_path']]);
                     if ($file == null) {
                         $file = new FilesList();
                     }
                     $file->contact_id = $apiParams['id'];
 
                     $file->file_name = $files[$i]['file_name'];
+                    
+                    $file->file_path = $files[$i]['file_path'];
 
                     $file->length = $files[$i]['length'];
 
@@ -288,7 +290,7 @@ class ContactService {
             $contactResponse->setMessage("Contact doesnot exists with this id");
             return $contactResponse;
         }
-        $list = FilesList::find()->select(['type', 'group_concat(concat(file_name,"#", length,"#", created_date)) AS files'])->where(['contact_id' => $contactId])->groupBy(['type'])->asArray()->all();
+        $list = FilesList::find()->select(['type', 'group_concat(concat(file_name,"#", file_path, "#", length,"#", created_date)) AS files'])->where(['contact_id' => $contactId])->groupBy(['type'])->asArray()->all();
         if ($list == null) {
             $contactResponse->setStatus(false);
             $contactResponse->setStatusCode(409);
@@ -301,7 +303,7 @@ class ContactService {
             $data = explode(',', $list[$i]['files']);
             for ($j = 0, $fcnt = count($data); $j < $fcnt; $j++) {
                 $file = explode('#', $data[$j]);
-                array_push($files[$list[$i]['type']], array("file_name" => @$file[0], "length" => @$file[1], "created_date" => @$file[2]));
+                array_push($files[$list[$i]['type']], array("file_name" => @$file[0], "file_path" => @$file[1], "length" => @$file[2], "created_date" => @$file[3]));
             }
         }
         $contactResponse->setResponse($files);
