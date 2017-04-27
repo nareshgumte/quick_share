@@ -92,27 +92,29 @@ class ContactService {
     private function saveProfileImage() {
         $fileTypes = ["image/jpeg", "image/png", "image/gif"];
         if (array_key_exists('profileImage', $_FILES) && ($_FILES['profileImage']['error'] == 0) && in_array($_FILES['profileImage']['type'], $fileTypes) && ($_FILES['profileImage']['size'] <= 1048576)) {
-            
+
             $fName = explode(".", $_FILES['profileImage']['name']);
             $ext = $fName[count($fName) - 1];
-            
+
             $fileName = Uid::generateUUID() . "." . $ext;
-            if (move_uploaded_file($_FILES['profileImage']['tmp_name'], Yii::$app->params['docRoot']. 'resources/contacts/' . $fileName)) {
-                return Url::to('@web/resources/contacts/'.$fileName, true);
+            if (move_uploaded_file($_FILES['profileImage']['tmp_name'], Yii::$app->params['docRoot'] . 'resources/contacts/' . $fileName)) {
+                return Url::to('@web/resources/contacts/' . $fileName, true);
             }
             return false;
         }
         return false;
     }
-    private function removeProfileImage($profileImage){
-        if(empty($profileImage)){
+
+    private function removeProfileImage($profileImage) {
+        if (empty($profileImage)) {
             return;
         }
-        $fileName = Yii::$app->params['docRoot']. 'resources/contacts/'.pathinfo($profileImage)['basename'];
-        if(file_exists($fileName)){
+        $fileName = Yii::$app->params['docRoot'] . 'resources/contacts/' . pathinfo($profileImage)['basename'];
+        if (file_exists($fileName)) {
             unlink($fileName);
         }
     }
+
     private function getDetilsByContact($phone) {
         return Contacts::findOne(['phone' => $phone]);
     }
@@ -261,7 +263,7 @@ class ContactService {
                     $file->contact_id = $apiParams['id'];
 
                     $file->file_name = $files[$i]['file_name'];
-                    
+
                     $file->file_path = $files[$i]['file_path'];
 
                     $file->length = $files[$i]['length'];
@@ -319,30 +321,31 @@ class ContactService {
             $contactResponse->setMessage("Contact doesnot exists with this id");
             return $contactResponse;
         }
-        if ($apiParams['facebook_id'] != NULL || $apiParams['name'] != NULL || $apiParams['designation'] != NULL) {
-            $this->removeProfileImage($contact->profile_image);
-            if ($apiParams['facebook_id'] != NULL) {
-                $contact->facebook_id = $apiParams['facebook_id'];
-            }
-            if ($apiParams['name'] != NULL) {
-                $contact->name = $apiParams['name'];
-            }
-            if ($apiParams['designation'] != NULL) {
-                $contact->designation = $apiParams['designation'];
-            }
-            $fileName = $this->saveProfileImage();
-            if ($fileName !== false) {
-                $contact->profile_image = $fileName;
-            }
-            
-            $bl = $contact->save();
-            if ($bl == false) {
-                $contactResponse->setStatus(false);
-                $contactResponse->setStatusCode(409);
-                $contactResponse->setMessage("Profile updating failed");
-                return $contactResponse;
-            }
+
+        $this->removeProfileImage($contact->profile_image);
+        if ($apiParams['facebook_id'] != NULL) {
+            $contact->facebook_id = $apiParams['facebook_id'];
         }
+        if ($apiParams['name'] != NULL) {
+            $contact->name = $apiParams['name'];
+        }
+        if ($apiParams['designation'] != NULL) {
+            $contact->designation = $apiParams['designation'];
+        }
+
+        $fileName = $this->saveProfileImage();
+        if ($fileName !== false) {
+            $contact->profile_image = $fileName;
+        }
+
+        $bl = $contact->save();
+        if ($bl == false) {
+            $contactResponse->setStatus(false);
+            $contactResponse->setStatusCode(409);
+            $contactResponse->setMessage("Profile updating failed");
+            return $contactResponse;
+        }
+
         $contactResponse->setMessage('Profile updated successfully');
         return $contactResponse;
     }
